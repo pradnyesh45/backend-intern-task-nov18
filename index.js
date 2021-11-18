@@ -1,9 +1,10 @@
 const express = require("express");
 const app = express();
 const mongoose = require("mongoose");
+
 const port = 3000;
 require("dotenv").config();
-const videoModel = require("./models");
+const videoModel = require("./model");
 
 app.use(express.json());
 
@@ -50,13 +51,13 @@ async function fetchVideos() {
 }
 
 async function enterVideoInfo(item) {
-  let video = new videoModel(
-    item.snippet.title,
-    item.snippet.description,
-    item.snippet.publishedAt,
-    item.snippet.thumbnailUrls
-  );
-  return video;
+  let video = new videoModel({
+    title: item.snippet.title,
+    description: item.snippet.description,
+    publishedAt: item.snippet.publishedAt,
+    thumbnailUrls: item.snippet.thumbnailUrls,
+  });
+  video.save();
 }
 
 // This function will execute every 10 seconds
@@ -64,13 +65,18 @@ setInterval(async () => {
   try {
     let response = await fetchVideos();
     const { data } = response;
-    data.items.forEach((item) => {
-      videoModel.findOne({ title: item.snippet.title }, async (err, video) => {
-        if (!err && !video) {
-          let video = enterVideoInfo(item);
-          await video.save();
+    data.items.forEach(async (item) => {
+      let video = await videoModel.findOne({ title: item.snippet.title });
+      try {
+        if (!video) {
+          enterVideoInfo(item);
+          //   console.log("video", video);
+          //   await video.save();
         }
-      });
+      } catch (error) {
+        console.log(error);
+      }
+
       //   console.log(item.snippet);
     });
     // console.log(response);
@@ -88,7 +94,6 @@ app.get("/serchOnYouTube", (req, res) => {});
 
 mongoose.connect(process.env.MONGO_URI, {
   useNewUrlParser: true,
-  useFindAndModify: false,
   useUnifiedTopology: true,
 });
 
