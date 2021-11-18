@@ -1,12 +1,16 @@
 const express = require("express");
 const app = express();
 const mongoose = require("mongoose");
+const mongoosePaginate = require("mongoose-paginate-v2");
+
+mongoose.Promise = global.Promise;
 
 const port = 3000;
 require("dotenv").config();
 const videoModel = require("./model");
 
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 const date = new Date();
 
@@ -100,7 +104,60 @@ app.get("/", (req, res) => {
   res.send("Hello World!");
 });
 
-app.get("/serchOnYouTube", (req, res) => {});
+const getPagination = (page, size) => {
+  const limit = size ? +size : 3;
+  const offset = page ? page * limit : 0;
+
+  return { limit, offset };
+};
+
+app.get("/getAllVideos", async (req, res) => {
+  try {
+    let { page, size } = req.query;
+    console.log("page:", page, "size:", size);
+    // const { limit, offset } = getPagination(page, size);
+    page = Number(page);
+    size = Number(size);
+    const data = await videoModel
+      .find({})
+      .sort({ publishedAt: -1 })
+      .skip((page - 1) * size)
+      .limit(size);
+
+    if (data) {
+      res.status(200).json({
+        data,
+      });
+    }
+  } catch (error) {
+    console.log(error);
+  }
+  // try {
+  //   const data = videoModel.paginate({}, { offset, limit });
+  //   //   .sort({ publishedAt: 1 });
+  //   if (data) {
+  //     res.status(200).json({
+  //       data,
+  //     });
+  //   }
+  // } catch (error) {
+  //   console.log(error);
+  // }
+});
+
+app.post("/search", async (req, res) => {
+  try {
+    const { title, description } = req.body;
+    const data = await videoModel.find({
+      $or: [{ title: title }, { description: description }],
+    });
+    res.status(200).json({
+      data,
+    });
+  } catch (error) {
+    console.log(error);
+  }
+});
 
 mongoose.connect(process.env.MONGO_URI, {
   useNewUrlParser: true,
