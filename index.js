@@ -45,17 +45,25 @@ async function fetchVideos() {
     //   publishedAfter: formatted,
     part: "snippet",
     q: "football",
+    type: "video",
+    order: "date",
+    publishedAfter: "2021-01-01T00:00:00Z",
+    maxResults: "5",
   });
   //   let response = await fetch("https://www.googleapis.com/youtube/v3/search");
   //   console.log(response);
 }
 
 async function enterVideoInfo(item) {
+  // let thumbailUrls = [];
+  // item.snippet.forEach((url) => {
+
+  // })
   let video = new videoModel({
     title: item.snippet.title,
     description: item.snippet.description,
     publishedAt: item.snippet.publishedAt,
-    thumbnailUrls: item.snippet.thumbnailUrls,
+    thumbnailUrls: item.snippet.thumbnails.default.url,
   });
   video.save();
 }
@@ -66,6 +74,8 @@ setInterval(async () => {
     let response = await fetchVideos();
     const { data } = response;
     data.items.forEach(async (item) => {
+      //   console.log("description", item.snippet.description);
+      //   console.log("thumbailUrls", item.snippet.thumbnails.default.url);
       let video = await videoModel.findOne({ title: item.snippet.title });
       try {
         if (!video) {

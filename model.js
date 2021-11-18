@@ -4,14 +4,14 @@ const VideoSchema = new mongoose.Schema({
   title: {
     type: String,
   },
-  decription: {
+  description: {
     type: String,
   },
   publishedAt: {
     type: String,
   },
   thumbnailUrls: {
-    type: Array,
+    type: String,
   },
 });
 
